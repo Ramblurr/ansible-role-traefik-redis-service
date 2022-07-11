@@ -1,0 +1,77 @@
+---
+# The hostname of the service. e.g, mything.mydomain.com
+# service_fqdn: ""
+
+# The URL to the upstream service. e.g., http://container:80
+# service_upstream:
+
+# Whether this should be an http or tcp service
+# TCP is useful when proxying non-http traffic, for example mqtt
+service_type: http # or tcp
+
+# The name of the traefik certificate resolver to use
+# traefik_cert_resolver: mycertresolver
+
+# A list of cert domains for the traefik tls router
+# Each list item should be a dictionary with the keys 'main' and 'sans'
+# 'main' should be the main domain name. 'sans' should be a list of alternative domains (or wildcard domains)
+# See traefik docs: https://doc.traefik.io/traefik/routing/routers/#domains
+# service_cert_domains: []
+
+# The uid for templated files (only used temporarily during role execution)
+service_role_owner: 0
+# The gid for templated files (only used temporarily during role execution)
+service_role_group: 0
+
+
+# A list of traefik entrypoints the service should be exposed at
+service_entrypoints: []
+
+
+# A dictionary containing the keys: hostname, port, interval, timeout
+# See traefik docs: https://doc.traefik.io/traefik/routing/services/#health-check
+# service_healthcheck:
+#   hostname:
+#   port:
+#   interval:
+#   timeout:
+
+
+# Extra labels to apply to the service (middlewares, etc). A list of strings.
+# To apply labels to your particular service/router use the string FQDNDOTLESS, it will be replaced at runtime
+# e.g., "- traefik.http.services.FQDNDOTLESS.loadbalancer.serverstransport=ignorecert@file"
+service_extra_labels: []
+
+# If you have multiple services on the same domain, put a unique string here
+# for each execution of this role to avoid name clashes.
+# This is useful if you're exposing services under the same domain but different
+# entrypoints (for example matrix synapse client and federation)
+# It should not contain any dots. Start it with an underscore for readability
+service_discriminator: ""
+
+# A path on the host where we can template files to during the execution
+# of this role. Files are cleaned up afterwards.
+# This can be the same directory across all executions of this role.
+# It will be created if it does not exist.
+# e.g., /srv/traefik/labels
+# service_local_data_dir:
+
+
+# Set to true when you are removing the service. Then this role will ensure everything is cleaned up
+service_remove: false
+
+
+traefik_redis_bind_ip:
+traefik_redis_bind_port: 6379
+# Optionally specify a password to use to connect to redis
+# traefik_redis_password:
+
+# Whether to use tls when connecting to redis or not
+traefik_use_tls: false
+
+
+# used internally
+_traefik_redis_password_cli: ""
+_service_labels: []
+
+_service_dry_run: true

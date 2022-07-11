@@ -1,0 +1,87 @@
+---
+# we cannot have any dots in the labels, so we clean that up here
+- name: set service_fqdn_dotless
+  set_fact:
+    service_fqdn_dotless: "{{ service_fqdn | regex_replace('\\.', '_') }}{{ service_discriminator }}"
+
+- name: ensure local data dir
+  ansible.builtin.file:
+    path: "{{ service_local_data_dir }}"
+    owner: "{{ service_role_owner }}"
+    group: "{{ service_role_group }}"
+    mode: 0760
+    state: directory
+
+- name: build the label file name
+  set_fact:
+    service_label_file: "{{ service_local_data_dir }}/{{ service_fqdn_dotless }}"
+
+- name: template the dynamic labels file
+  ansible.builtin.template:
+    src: traefik-dynamic-labels.j2
+    dest: "{{ service_label_file }}"
+    owner: "{{ service_role_owner }}"
+    group: "{{ service_role_group }}"
+    mode: 0640
+  when: not service_remove
+
+- name: read label file
+  ansible.builtin.slurp:
+    src: "{{ service_label_file }}"
+  register: _container_labels
+  when: not service_remove
+
+- debug:
+    msg: >
+      {{ _container_labels['content'] | b64decode }}
+  when: _service_dry_run
+
+- name: Build the label list in memory
+  set_fact:
+    _service_labels: >
+      {{ _service_labels + [{
+      'key': _service_label.split('=', 1)[0] | regex_replace('\\.', '/'),
+      'value': _service_label.split('=', 1)[1]
+      }] }}
+
+  loop: >
+    {{ (_container_labels['content'] | b64decode).splitlines() | map('trim') | list }}
+  when: >
+    '#' not in _service_label and (_service_label|length > 0)
+  loop_control:
+    loop_var: _service_label
+
+- debug:
+    var: _service_labels
+  when: _service_dry_run
+
+- name: build the redis-cli command when we use a password
+  when: (traefik_redis_password | default("") | length > 0) and not _service_dry_run
+  set_fact:
+    _traefik_redis_password_cli: "-a {{ traefik_redis_password }}"
+
+- name: clear all existing redis keys
+  when: not _service_dry_run
+  shell:
+    cmd: >
+      redis-cli {{ _traefik_redis_password_cli }} -h {{ traefik_redis_bind_ip }} -p {{ traefik_redis_bind_port }} --scan --pattern "traefik/*/*{{ service_fqdn_dotless }}*/*" | xargs redis-cli -h {{ traefik_redis_bind_ip }} -p {{ traefik_redis_bind_port }} del
+
+
+- name: set traefik keys in redis
+  when: not service_remove and not _service_dry_run
+  community.general.redis_data:
+    login_host: "{{ traefik_redis_bind_ip }}"
+    login_port: "{{ traefik_redis_bind_port }}"
+    tls: "{{ traefik_use_tls }}"
+    key: "{{ _service_label.key }}"
+    value: "{{ _service_label.value }}"
+    state: "{{ service_remove | ternary('absent', 'present') }}"
+  loop: "{{ _service_labels }}"
+  loop_control:
+    loop_var: _service_label
+
+- name: cleanup label file
+  ansible.builtin.file:
+    path: "{{ service_label_file }}"
+    state: absent
+  when: service_remove and not _service_dry_run

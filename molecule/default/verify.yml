@@ -1,0 +1,24 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - set_fact:
+        _test_fixture:
+          - key: traefik.enable
+            value: 'true'
+          - key: traefik.http.routers.router-http-mything_mydomain_com_foo.rule
+            value: Host(`mything.mydomain.com`)
+          - key: traefik.http.routers.router-http-mything_mydomain_com_foo.service
+            value: mything_mydomain_com_foo
+          - key: traefik.http.routers.router-http-mything_mydomain_com_foo.entrypoints.0
+            value: secure
+          - key: traefik.http.routers.router-http-mything_mydomain_com_foo.service
+            value: mything_mydomain_com_foo
+          - key: traefik.http.services.mything_mydomain_com_foo.loadbalancer.servers.0.url
+            value: http://mything:80
+          - key: traefik.http.services.mything_mydomain_com_foo.loadbalancer.serverstransport
+            value: ignorecert@file
+    - name: Example assertion
+      ansible.builtin.assert:
+        that: "{{ _test_fixture == _service_labels }}"

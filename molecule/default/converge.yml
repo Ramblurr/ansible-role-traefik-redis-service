@@ -1,0 +1,23 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    service_fqdn: mything.mydomain.com
+    service_upstream: http://mything:80
+    service_role_owner: 1000
+    service_role_group: 1000
+    service_entrypoints:
+      - secure
+    service_local_data_dir: /tmp/labels
+    service_cert_domains:
+      - main: mydomain.com
+        sans:
+          - "*.mydomain.com"
+    service_discriminator: _foo
+    service_extra_labels:
+      - traefik.http.services.FQDNDOTLESS.loadbalancer.serverstransport=ignorecert@file
+    _dry_run: true
+  tasks:
+    - name: "Include ramblurr.traefik_redis_service"
+      ansible.builtin.include_role:
+        name: "ramblurr.traefik_redis_service"

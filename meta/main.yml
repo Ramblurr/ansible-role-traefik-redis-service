@@ -1,0 +1,15 @@
+galaxy_info:
+  author: Casey Link
+  namespace: ramblurr
+  description: Create traefik configuration in redis
+  company:
+  issue_tracker_url: https://github.com/Ramblurr/ansible-role-traefik-redis-service/issues
+  license: AGPL-3.0-or-later
+
+  min_ansible_version: 2.10
+  galaxy_tags: []
+
+# this role depends on community.general
+# but ansible does not let roles depend on collections
+# source: https://github.com/ansible/ansible/issues/62847
+dependencies: []
