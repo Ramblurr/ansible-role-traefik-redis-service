@@ -14,6 +14,8 @@ not want to let traefik have access to your docker/podman socket.
 
 See the test file at [./molecule/default/converge.yml][1] for an example of how to use it.
 
+You'll need to add your own redis connection vars, see [defaults/main.yml][3].
+
 That test file produces an equivelent configuration in redis of:
 
 ```
@@ -49,3 +51,4 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 [0]: https://doc.traefik.io/traefik/providers/redis/
 [1]: ./molecule/default/converge.yml
 [2]: https://galaxy.ansible.com/community/general
+[3]: ./defaults/main.yml

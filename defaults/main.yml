@@ -60,8 +60,12 @@ service_discriminator: ""
 # Set to true when you are removing the service. Then this role will ensure everything is cleaned up
 service_remove: false
 
+# Redis connection vars
 
+# Redis host to connect to
 traefik_redis_bind_ip:
+
+# Port to use when connecting to redis
 traefik_redis_bind_port: 6379
 # Optionally specify a password to use to connect to redis
 # traefik_redis_password:
