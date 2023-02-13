@@ -84,4 +84,4 @@
   ansible.builtin.file:
     path: "{{ service_label_file }}"
     state: absent
-  when: service_remove and not _service_dry_run
+  when: not _service_dry_run
