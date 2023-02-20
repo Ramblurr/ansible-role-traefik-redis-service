@@ -34,7 +34,7 @@
 - debug:
     msg: >
       {{ _container_labels['content'] | b64decode }}
-  when: _service_dry_run
+  when: service_dry_run
 
 - name: Build the label list in memory
   set_fact:
@@ -53,22 +53,22 @@
 
 - debug:
     var: _service_labels
-  when: _service_dry_run
+  when: service_dry_run
 
 - name: build the redis-cli command when we use a password
-  when: (traefik_redis_password | default("") | length > 0) and not _service_dry_run
+  when: (traefik_redis_password | default("") | length > 0) and not service_dry_run
   set_fact:
     _traefik_redis_password_cli: "-a {{ traefik_redis_password }}"
 
 - name: clear all existing redis keys
-  when: not _service_dry_run
+  when: not service_dry_run
   shell:
     cmd: >
       redis-cli {{ _traefik_redis_password_cli }} -h {{ traefik_redis_bind_ip }} -p {{ traefik_redis_bind_port }} --scan --pattern "traefik/*/*{{ service_fqdn_dotless }}*/*" | xargs redis-cli -h {{ traefik_redis_bind_ip }} -p {{ traefik_redis_bind_port }} del
 
 
 - name: set traefik keys in redis
-  when: not service_remove and not _service_dry_run
+  when: not service_remove and not service_dry_run
   community.general.redis_data:
     login_host: "{{ traefik_redis_bind_ip }}"
     login_port: "{{ traefik_redis_bind_port }}"
@@ -84,4 +84,4 @@
   ansible.builtin.file:
     path: "{{ service_label_file }}"
     state: absent
-  when: not _service_dry_run
+  when: not service_dry_run

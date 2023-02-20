@@ -73,9 +73,10 @@ traefik_redis_bind_port: 6379
 # Whether to use tls when connecting to redis or not
 traefik_use_tls: false
 
+# If true, will just output what would be done
+service_dry_run: false
 
 # used internally
 _traefik_redis_password_cli: ""
 _service_labels: []
 
-_service_dry_run: true
