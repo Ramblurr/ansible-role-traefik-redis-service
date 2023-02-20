@@ -28,28 +28,13 @@
 - name: read label file
   ansible.builtin.slurp:
     src: "{{ service_label_file }}"
-  register: _container_labels
+  register: _service_labels
   when: not service_remove
 
 - debug:
     msg: >
-      {{ _container_labels['content'] | b64decode }}
+      {{ _service_labels['content'] | b64decode }}
   when: service_dry_run
-
-- name: Build the label list in memory
-  set_fact:
-    _service_labels: >
-      {{ _service_labels + [{
-      'key': _service_label.split('=', 1)[0] | regex_replace('\\.', '/'),
-      'value': _service_label.split('=', 1)[1]
-      }] }}
-
-  loop: >
-    {{ (_container_labels['content'] | b64decode).splitlines() | map('trim') | list }}
-  when: >
-    '#' not in _service_label and (_service_label|length > 0)
-  loop_control:
-    loop_var: _service_label
 
 - debug:
     var: _service_labels
@@ -60,29 +45,25 @@
   set_fact:
     _traefik_redis_password_cli: "-a {{ traefik_redis_password }}"
 
-- name: clear all existing redis keys
-  when: not service_dry_run
+- name: clear redis keys
   delegate_to: "{{ service_delegate_to }}"
   become: "{{ service_delegate_become }}"
-  shell:
+  ansible.builtin.shell:
     cmd: >
-      redis-cli {{ _traefik_redis_password_cli }} -h {{ traefik_redis_bind_ip }} -p {{ traefik_redis_bind_port }} --scan --pattern "traefik/*/*{{ service_fqdn_dotless }}*/*" | xargs redis-cli -h {{ traefik_redis_bind_ip }} -p {{ traefik_redis_bind_port }} del
+      redis-cli -h {{ traefik_redis_bind_ip }} -p {{ traefik_redis_bind_port }} --scan --pattern "traefik/*/*{{ service_fqdn_dotless }}*/*" | xargs redis-cli -h {{ traefik_redis_bind_ip }} -p {{ traefik_redis_bind_port }} del
 
-
-- name: set traefik keys in redis
-  when: not service_remove and not service_dry_run
+- name: set traefik keys
+  when: not service_remove
   delegate_to: "{{ service_delegate_to }}"
   become: "{{ service_delegate_become }}"
   community.general.redis_data:
     login_host: "{{ traefik_redis_bind_ip }}"
     login_port: "{{ traefik_redis_bind_port }}"
     tls: "{{ traefik_use_tls }}"
-    key: "{{ _service_label.key }}"
-    value: "{{ _service_label.value }}"
+    key: "{{ item.split('=', 1)[0] | regex_replace('\\.', '/') }}"
+    value: "{{ item.split('=', 1)[1] }}"
     state: "{{ service_remove | ternary('absent', 'present') }}"
-  loop: "{{ _service_labels }}"
-  loop_control:
-    loop_var: _service_label
+  loop: "{{ (_service_labels['content'] | b64decode).splitlines() }}"
 
 - name: cleanup label file
   ansible.builtin.file:
