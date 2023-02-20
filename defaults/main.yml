@@ -42,6 +42,8 @@ service_entrypoints: []
 # e.g., "- traefik.http.services.FQDNDOTLESS.loadbalancer.serverstransport=ignorecert@file"
 service_extra_labels: []
 
+service_upstream_ignorecert: false
+
 # If you have multiple services on the same domain, put a unique string here
 # for each execution of this role to avoid name clashes.
 # This is useful if you're exposing services under the same domain but different
