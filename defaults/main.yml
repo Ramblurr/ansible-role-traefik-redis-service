@@ -78,6 +78,8 @@ service_dry_run: false
 
 # The host that the redis-cli commands will be run on
 service_delegate_to: localhost
+# Whether to use become when delegating the redis-cli commands
+service_delegate_become: false
 
 # used internally
 _traefik_redis_password_cli: ""
