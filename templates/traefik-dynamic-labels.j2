@@ -1,63 +1,68 @@
-# definitely enable traefik
 traefik.enable=true
 {% if service_type == 'http' %}
-
+{% if servce_basic_auth is defined %}
+{% endif %}
 traefik.http.routers.router-http-{{ service_fqdn_dotless }}.rule=Host(`{{ service_fqdn }}`)
 traefik.http.routers.router-http-{{ service_fqdn_dotless }}.service={{ service_fqdn_dotless }}
-
-{% for e in service_entrypoints | default([])%}
+{% if service_entrypoints_secure is defined %}
+{% for e in service_entrypoints_secure %}
 traefik.http.routers.router-http-{{ service_fqdn_dotless }}.entrypoints.{{ loop.index0 }}={{ e }}
 {% endfor %}
-
+traefik.http.routers.router-http-{{ service_fqdn_dotless }}-insecure.rule=Host(`{{ service_fqdn }}`)
+traefik.http.routers.router-http-{{ service_fqdn_dotless }}-insecure.entrypoints.0=web-internal
+traefik.http.routers.router-http-{{ service_fqdn_dotless }}-insecure.middlewares.0={{ service_fqdn_dotless }}-https
+traefik.http.routers.router-http-{{ service_fqdn_dotless }}-insecure.service={{ service_fqdn_dotless }}
+traefik.http.middlewares.{{ service_fqdn_dotless }}-https.redirectscheme.scheme=https
+{% else %}
+traefik.http.routers.router-http-{{ service_fqdn_dotless }}.entrypoints.0={{ service_entrypoint }}
+{% endif %}
 traefik.http.routers.router-http-{{ service_fqdn_dotless }}.service={{ service_fqdn_dotless }}
-
 {% if service_cert_resolver is defined %}
-
 traefik.http.routers.router-http-{{ service_fqdn_dotless }}.tls.certResolver={{ service_cert_resolver }}
-
+{% if service_cert_domains is defined %}
 {% for d in service_cert_domains | default ([]) %}
 {% set outer_loop = loop %}
 traefik.http.routers.router-http-{{ service_fqdn_dotless }}.tls.domains.{{ outer_loop.index0 }}.main={{ d.main }}
 {% for s in d.sans | default ([]) %}
 traefik.http.routers.router-http-{{ service_fqdn_dotless }}.tls.domains.{{ outer_loop.index0 }}.sans.{{ loop.index0 }}={{ s }}
-{% endfor %} # /for sans
-{% endfor %} # /for service_cert_domains
-{% endif %} # /if service_cert_resolver
-
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% endif %}
 traefik.http.services.{{ service_fqdn_dotless }}.loadbalancer.servers.0.url={{ service_upstream }}
-
+{% if service_upstream_ignorecert %}
+traefik.http.services.{{ service_fqdn_dotless }}.loadbalancer.serverstransport=ignorecert@file
+{% endif %}
 {% if service_healthcheck is defined %}
 traefik.http.services.{{ service_fqdn_dotless }}.loadbalancer.healthcheck.hostname={{ service_healthcheck.hostname }}
 traefik.http.services.{{ service_fqdn_dotless }}.loadbalancer.healthcheck.port={{ service_healthcheck.port }}
 traefik.http.services.{{ service_fqdn_dotless }}.loadbalancer.healthcheck.interval={{ service_healthcheck.interval | default('10') }}
 traefik.http.services.{{ service_fqdn_dotless }}.loadbalancer.healthcheck.timeout={{ service_healthcheck.timeout | default('60') }}
 {% endif %}
-
 {% elif service_type == 'tcp' %}
-
 traefik.tcp.routers.router-tcp-{{ service_fqdn_dotless }}.rule=HostSNI(`{{ service_fqdn }}`)
 traefik.tcp.routers.router-tcp-{{ service_fqdn_dotless }}.service={{ service_fqdn_dotless }}
-
-{% for e in service_entrypoints | default([]) %}
+{% if service_entrypoints is defined %}
+{% for e in service_entrypoints %}
 traefik.tcp.routers.router-tcp-{{ service_fqdn_dotless }}.entrypoints.{{ loop.index0 }}={{ e }}
 {% endfor %}
-
+{% else %}
+traefik.tcp.routers.router-tcp-{{ service_fqdn_dotless }}.entrypoints.0={{ service_entrypoint }}
+{% endif %}
 {% if service_cert_resolver is defined %}
-
 traefik.tcp.routers.router-tcp-{{ service_fqdn_dotless }}.tls.certResolver={{ service_cert_resolver }}
+{% if service_cert_domains is defined %}
 {% for d in service_cert_domains | default ([]) %}
 {% set outer_loop = loop %}
 traefik.tcp.routers.router-tcp-{{ service_fqdn_dotless }}.tls.domains.{{ outer_loop.index0 }}.main={{ d.main }}
 {% for s in d.sans | default ([]) %}
 traefik.tcp.routers.router-tcp-{{ service_fqdn_dotless }}.tls.domains.{{ outer_loop.index0 }}.sans.{{ loop.index0 }}={{ s }}
-{% endfor %} # /for sans
-{% endfor %} # /for service_cert_domains
-{% endif %} # /if service_cert_resolver
-
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% endif %}
 traefik.tcp.services.{{ service_fqdn_dotless }}.loadbalancer.servers.0.address={{ service_upstream }}
-
-{% endif %} # / if service_type is tcp
-
+{% endif %}
 {% if (service_extra_labels | length) > 0 %}
 {% for l in service_extra_labels %}
 {{ l | replace('FQDNDOTLESS', service_fqdn_dotless ) }}
