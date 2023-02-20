@@ -62,6 +62,7 @@
 
 - name: clear all existing redis keys
   when: not service_dry_run
+  delegate_to: "{{ service_delegate_to }}"
   shell:
     cmd: >
       redis-cli {{ _traefik_redis_password_cli }} -h {{ traefik_redis_bind_ip }} -p {{ traefik_redis_bind_port }} --scan --pattern "traefik/*/*{{ service_fqdn_dotless }}*/*" | xargs redis-cli -h {{ traefik_redis_bind_ip }} -p {{ traefik_redis_bind_port }} del
@@ -69,6 +70,7 @@
 
 - name: set traefik keys in redis
   when: not service_remove and not service_dry_run
+  delegate_to: "{{ service_delegate_to }}"
   community.general.redis_data:
     login_host: "{{ traefik_redis_bind_ip }}"
     login_port: "{{ traefik_redis_bind_port }}"

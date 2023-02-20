@@ -76,6 +76,9 @@ traefik_use_tls: false
 # If true, will just output what would be done
 service_dry_run: false
 
+# The host that the redis-cli commands will be run on
+service_delegate_to: localhost
+
 # used internally
 _traefik_redis_password_cli: ""
 _service_labels: []
